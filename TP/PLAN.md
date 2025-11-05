@@ -1,67 +1,96 @@
 # Plan de tests – Projet Triangulator
-Objectif
 
-Ce plan définit la stratégie de tests pour valider la fiabilité, la justesse, la performance et la qualité du microservice Triangulator, selon une approche test first.
+## Objectif
 
-* les tests à réaliser 
-  
-1. Tests unitaires
+Ce document décrit la stratégie de tests adoptée pour valider la **fiabilité**, la **justesse**, la **performance** et la **qualité** du microservice `Triangulator`.  
+L’approche suivie est **test-first** : les tests sont conçus **avant** toute implémentation de la logique métier, afin de guider le développement et garantir une couverture pertinente dès le départ.
 
-on Vérifie les fonctions internes :
+---
 
--Calcul de triangulation.
+## 1. Tests unitaires
 
--Conversion binaire et  structures Python.
+### Objectif
+Valider la justesse et la robustesse des fonctions internes du service, indépendamment de l’API ou des dépendances externes.
 
--Gestion des entrées invalides.
+### Fonctionnalités à tester
+- **Algorithme de triangulation**  
+  - Sortie correcte pour des cas standards (3 points non colinéaires → 1 triangle).  
+  - Comportement attendu pour les cas limites :  
+    - Ensemble vide ou avec < 3 points → aucune triangulation.  
+    - Points colinéaires ou dupliqués → robustesse de l’algorithme.  
+- **Conversion binaire ↔ structures Python**  
+  - Encodage/décodage exact des `PointSet` et `Triangles` selon la spécification binaire.  
+  - Respect du format : taille, endianness, types (`unsigned long`, `float`).  
+- **Gestion des entrées invalides**  
+  - Données binaires tronquées, corrompues ou mal formatées.  
+  - Points avec coordonnées infinies ou NaN (si pertinent).  
 
-But : assurer la justesse et la stabilité des fonctions de base.
+### Méthodologie
+- Fonctions testées **en isolation** (sans dépendance réseau ou Flask).  
+- Utilisation de `pytest` avec fixtures pour jeux de données réutilisables.  
+- Mocks **non nécessaires** ici : les unités testées sont pures.
 
-2. Tests d’intégration
+---
 
-on Vérifie le fonctionnement global via l’API HTTP :
+## 2. Tests d’intégration (API & interaction)
 
-Interaction avec le PointSetManager .
+### Objectif
+S’assurer que le service fonctionne correctement dans son **contexte réel** : via son API HTTP et en interaction avec le `PointSetManager`.
 
-Cas valides et erreurs (404, 503, etc.).
+### Scénarios à tester
+- **Cas nominal**  
+  - Requête POST `/triangulate` avec un `PointSetID` valide → réponse `200` + payload binaire conforme.
+- **Erreurs HTTP attendues**  
+  - `404` si le `PointSetID` n’existe pas côté `PointSetManager`.  
+  - `502` ou `503` si le `PointSetManager` est injoignable (ex. timeout, refus de connexion).  
+  - `400` si l’ID fourni n’est pas un entier.
+- **Mauvaises méthodes ou routes**  
+  - GET sur `/triangulate` → `405 Method Not Allowed`.
+- **Données incohérentes du PointSetManager**  
+  - Réponse non binaire, binaire tronqué, nombre de points négatif → gestion sans crash.
 
-But : s’assurer du bon comportement du service de bout en bout.
+### Méthodologie
+- Lancement du service Flask en mode test (`app.test_client()`).  
+- Mock de l’appel HTTP vers le `PointSetManager` à l’aide de `unittest.mock` ou `responses`.  
+- Vérification stricte du **code HTTP**, du **Content-Type** (`application/octet-stream`) et du **corps binaire** de la réponse.
 
-3. Tests de performance
+---
 
-on doit Mesurer le temps de calcul et de conversion pour différents volumes de données.
+## 3. Tests de performance
 
-Objectif : Mesurer la rapidité et la consommation de ressources.
+### Objectif
+Évaluer la scalabilité et l’efficacité du service en fonction de la taille des données traitées.
 
-Scénarios :
+### Scénarios
+- Triangulation de `PointSet` de tailles croissantes :  
+  - 10 points → temps négligeable (< 10 ms)  
+  - 100 points → < 100 ms  
+  - 1 000 points → < 2 s  
+  - 10 000 points → mesurer temps (attendu : croissance super-linéaire, mais pas de crash)  
+- Mesure séparée du temps de :  
+  - Désérialisation du `PointSet`  
+  - Calcul de la triangulation  
+  - Sérialisation du résultat (`Triangles`)
 
--Triangulation avec 10, 100, 1 000, 10 000 points.
+### Méthodologie
+- Tests isolés avec décorateur `@pytest.mark.performance`.  
+- Exécutés **seulement** via `make perf_test` (exclus de `make unit_test`).  
+- Utilisation de `time.perf_counter()` pour mesures précises.  
+- **Pas de seuil absolu imposé**, mais comparaisons relatives et documentation des résultats dans les commentaires de test.
 
--Mesure du temps moyen d’exécution et du taux de croissance.
+---
 
--Mesure du temps de conversion binaire pour différents volumes.
+## Outils et organisation
 
-
-
-* Outils et organisation 
-
-pytest : exécution des tests
-
-coverage : mesure de couverture
-
-ruff : qualité du code
-
-pdoc3 : documentation
-
-Makefile : automatisation (make test, make unit_test, make perf_test, etc.)
-
-* Critères de réussite 
-
--Tous les tests passent.
-
--Couverture > 90 %.
-
--Aucun warning ruff.
-
--Documentation générée sans erreur.
-
+- **`pytest`** : framework principal pour tous les tests.  
+- **`coverage`** : mesure la couverture du code par les tests (`make coverage`).  
+- **`ruff`** : vérifie la qualité et la conformité du style (`make lint`).  
+- **`pdoc3`** : génère automatiquement la documentation (`make doc`).  
+- **`Makefile`** : fournit les commandes standardisées :  
+  ```makefile
+  make test          # tous les tests
+  make unit_test     # tous sauf perf
+  make perf_test     # uniquement perf
+  make coverage
+  make lint
+  make doc
