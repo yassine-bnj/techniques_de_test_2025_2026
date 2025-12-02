@@ -8,3 +8,7 @@ select = [
     "SIM",
     "I",
 ]
+[tool.pytest.ini_options]
+markers = [
+    "performance: mark a test as a performance test",
+]
