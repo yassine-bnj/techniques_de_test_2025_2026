@@ -12,13 +12,13 @@ def test_full_workflow(mock_get):
 
     # Récupère les points
     resp = requests.get("http://fake-pointsetmanager/pointsets/123")
-    points = decode_pointset(resp.content)  # → échoue car decode_pointset non implémenté
+    points = decode_pointset(resp.content)  
 
     # Tente de trianguler
-    triangles = triangulate(points)  # → échoue
+    triangles = triangulate(points) 
 
     # Encode le résultat
-    result = encode_triangles(points, triangles)  # → échoue
+    result = encode_triangles(points, triangles)  
 
-    # Le test échoue → c’est OK à ce stade
+   
     assert result is not None
