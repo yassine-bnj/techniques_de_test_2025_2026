@@ -1,6 +1,7 @@
 import pytest
 from triangulator.api import app
 import struct
+import requests
 @pytest.fixture
 def client():
     app.config['TESTING'] = True
@@ -42,3 +43,18 @@ def test_post_triagulate_invalid_id_format(client):
 def test_post_triagulate_missing_id(client):
     response = client.post('/triangulate', json={})
     assert response.status_code == 400
+
+def test_post_triagulate_non_json_content(client):
+    response = client.post('/triangulate', data="not json", content_type='text/plain')
+    assert response.status_code == 400
+
+def test_post_triagulate_negative_id(client):
+    response = client.post('/triangulate', json={'pointSetId': -5})
+    assert response.status_code == 400
+
+def test_post_triagulate_pointsetmanager_unreachable(client, mocker):
+    mocker.patch('triangulator.api.requests.get', side_effect=requests.RequestException())
+    response = client.post('/triangulate', json={'pointSetId': 123})
+    assert response.status_code == 502
+
+ 

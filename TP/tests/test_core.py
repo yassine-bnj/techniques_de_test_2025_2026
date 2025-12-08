@@ -27,3 +27,11 @@ def test_triangulate_three_points():
     # On attend 1 triangle avec indices (0, 1, 2) — ordre peut varier
     assert len(triangles) == 1
     assert set(triangles[0]) == {0, 1, 2}
+
+def test_triangulate_collinear_points():
+    points = [(0.0, 0.0), (1.0, 1.0), (2.0, 2.0)]  # colinéaires
+    assert triangulate(points) == []
+
+def test_decode_pointset_invalid_length():
+    with pytest.raises(ValueError):
+        decode_pointset(b"\x05\x00\x00\x00")  # 5 points attendus, mais 0 fourni    
