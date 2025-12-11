@@ -1,3 +1,14 @@
+[tool.ruff.lint]
+select = [
+    "D",
+    "E",
+    "F",
+    "UP",
+    "B",
+    "SIM",
+    "I",
+]
+
 [tool.pytest.ini_options]
 markers = [
     "performance: mark a test as a performance test",

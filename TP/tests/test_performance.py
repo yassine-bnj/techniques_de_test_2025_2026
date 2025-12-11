@@ -4,6 +4,7 @@ import contextlib
 import time
 
 import pytest
+
 from triangulator.core import triangulate
 
 

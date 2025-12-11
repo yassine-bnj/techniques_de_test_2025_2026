@@ -1,6 +1,7 @@
 """Unit tests for the core triangulation and binary parsing logic."""
 
 import pytest
+
 from triangulator.core import decode_pointset, triangulate
 
 

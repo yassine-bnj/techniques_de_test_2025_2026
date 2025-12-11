@@ -3,6 +3,7 @@
 from unittest.mock import patch
 
 import requests
+
 from triangulator.core import decode_pointset, encode_triangles, triangulate
 
 

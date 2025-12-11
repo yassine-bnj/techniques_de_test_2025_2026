@@ -4,6 +4,7 @@ import struct
 
 import pytest
 import requests
+
 from triangulator.api import app
 
 

@@ -1,33 +1,43 @@
 Module triangulator.core
 ========================
+Core logic for Triangulator: binary parsing, triangulation, and encoding.
 
 Functions
 ---------
 
-`decode_pointset(data: bytes) ‑> List[Tuple[float, float]]`
-:   Décoder un PointSet à partir de données binaires.
+`decode_pointset(data: bytes) ‑> list[tuple[float, float]]`
+:   Decode a PointSet from binary data.
     
-    Format:
-    - 4 octets: nombre de points N (unsigned long, little-endian)
-    - N fois 8 octets: (X: float, Y: float)
+    The binary format is:
+    - 4 bytes: number of points N (unsigned long, little-endian)
+    - N × 8 bytes: (X: float, Y: float) for each point
     
-    Lève une ValueError si les données sont invalides.
+    Raises:
+        ValueError: if the data is too short or has an incorrect length.
 
-`encode_triangles(vertices: List[Tuple[float, float]], triangles: List[Tuple[int, int, int]]) ‑> bytes`
-:   Encoder une liste de triangles au format binaire Triangles.
+`encode_triangles(vertices: list[tuple[float, float]], triangles: list[tuple[int, int, int]]) ‑> bytes`
+:   Encode a list of triangles into the binary Triangles format.
     
-    Format:
-    - PointSet (comme decode_pointset)
-    - 4 octets: nombre de triangles T
-    - T fois 12 octets: (i, j, k) comme unsigned long
+    The binary format is:
+    - PointSet (as in decode_pointset)
+    - 4 bytes: number of triangles T (unsigned long)
+    - T × 12 bytes: (i, j, k) vertex indices (unsigned long)
     
-    Lève une ValueError si les indices sont invalides.
+    Raises:
+        ValueError: if any triangle index is out of bounds.
 
-`triangulate(points: List[Tuple[float, float]]) ‑> List[Tuple[int, int, int]]`
-:   Calculer une triangulation à partir d'une liste de points [(x, y), ...].
-    Retourne une liste de triangles sous forme d'indices : [(i, j, k), ...].
+`triangulate(points: list[tuple[float, float]]) ‑> list[tuple[int, int, int]]`
+:   Compute a triangulation from a list of 2D points.
     
-    Implémentation minimale :
-    - 0, 1, 2 points → []
-    - 3 points non colinéaires → [(0, 1, 2)]
-    - Plus de 3 points → non supporté (à étendre plus tard)
+    Returns a list of triangles as vertex index triples: [(i, j, k), ...].
+    
+    Minimal implementation:
+    - Fewer than 3 points → empty list
+    - 3 non-collinear points → single triangle [(0, 1, 2)]
+    - More than 3 points → not supported (returns empty list)
+    
+    Args:
+        points: List of (x, y) coordinates.
+    
+    Returns:
+        List of triangles represented by vertex indices.
