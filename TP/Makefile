@@ -17,4 +17,4 @@ lint:
 	python -m ruff check .
 
 doc:
-	pdoc -o docs triangulator
+	python -m pdoc -o docs triangulator --force
